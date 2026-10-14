@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>FF Weapon 3D - Mobile</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 100%);
+    color: #fff;
+    position: fixed;
+    touch-action: none;
+}
+
+/* ═══ CANVAS ═══ */
+#canvas-container {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+}
+
+/* ═══ HEADER ═══ */
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    background: linear-gradient(180deg, rgba(10,14,26,0.95) 0%, transparent 100%);
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+}
+.logo {
+    font-size: 14px;
+    font-weight: 900;
+    background: linear-gradient(90deg, #ff6b00, #ffd700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+    pointer-events: auto;
+}
+.social-mini {
+    font-size: 10px;
+    color: #ffd700;
+    font-weight: 600;
+    pointer-events: auto;
+}
+
+/* ═══ WEAPON LIST (DƯỚI CÙNG - DỄ CHẠM) ═══ */
+.weapon-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 8px 14px;
+    background: linear-gradient(0deg, rgba(10,14,26,0.98) 0%, rgba(10,14,26,0.7) 70%, transparent 100%);
+    z-index: 10;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.weapon-panel::-webkit-scrollbar { display: none; }
+
+.weapon-btn {
+    flex: 0 0 auto;
+    min-width: 74px;
+    padding: 8px 6px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    line-height: 1.3;
+}
+.weapon-btn .icon {
+    display: block;
+    font-size: 18px;
+    margin-bottom: 3px;
+}
+.weapon-btn:active {
+    transform: scale(0.95);
+}
+.weapon-btn.active {
+    background: linear-gradient(135deg, #ff6b00, #ffd700);
+    color: #000;
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(255,215,0,0.6);
+}
+
+/* ═══ INFO PANEL (GÓC TRÊN PHẢI - CÓ THỂ THU GỌN) ═══ */
+.info-panel {
+    position: fixed;
+    top: 44px;
+    right: 8px;
+    z-index: 10;
+    background: rgba(10,14,26,0.85);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 12px;
+    padding: 10px 12px;
+    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
+    min-width: 130px;
+    max-width: 160px;
+    transition: all 0.3s;
+}
+.info-panel.collapsed {
+    max-width: 44px;
+    padding: 8px;
+}
+.info-panel.collapsed .info-body {
+    display: none;
+}
+.info-panel.collapsed .info-title {
+    display: none;
+}
+.info-toggle {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    background: rgba(255,215,0,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #ffd700;
+    cursor: pointer;
+}
+.info-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #ffd700;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    padding-right: 18px;
+    letter-spacing: 0.5px;
+}
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    font-size: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.info-row:last-child { border: none; }
+.info-row .label { color: #888; }
+.info-row .value { color: #ffd700; font-weight: 700; }
+
+/* ═══ CONTROLS (GÓC TRÁI TRÊN) ═══ */
+.controls {
+    position: fixed;
+    top: 44px;
+    left: 8px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.ctrl-btn {
+    width: 38px;
+    height: 38px;
+    background: rgba(10,14,26,0.85);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    -webkit-tap-highlight-color: transparent;
+}
+.ctrl-btn:active {
+    transform: scale(0.9);
+    background: rgba(255,215,0,0.2);
+}
+.ctrl-btn.active {
+    background: linear-gradient(135deg, #ff6b00, #ffd700);
+    color: #000;
+    border-color: #ffd700;
+}
+
+/* ═══ HINT (HƯỚNG DẪN) ═══ */
+.hint {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    background: rgba(10,14,26,0.95);
+    border: 1px solid #ffd700;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    max-width: 280px;
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    animation: popIn 0.4s ease;
+}
+.hint h3 {
+    color: #ffd700;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+.hint p {
+    color: #ccc;
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+.hint .gesture {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 6px 0;
+    padding: 6px;
+    background: rgba(255,215,0,0.05);
+    border-radius: 8px;
+}
+.hint .gesture span {
+    font-size: 16px;
+}
+.hint .gesture b {
+    color: #ffd700;
+    font-size: 11px;
+}
+.hint .close-btn {
+    margin-top: 12px;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #ff6b00, #ffd700);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 12px;
+    cursor: pointer;
+    width: 100%;
+}
+@keyframes popIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.hint.hidden { display: none; }
+
+/* ═══ LOADING ═══ */
+.loading {
+    position: fixed;
+    inset: 0;
+    background: #0a0e1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: opacity 0.5s;
+}
+.loading.hidden { opacity: 0; pointer-events: none; }
+.spinner {
+    width: 44px;
+    height: 44px;
+    border: 3px solid rgba(255,215,0,0.2);
+    border-top-color: #ffd700;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 16px;
+}
+.loading-text {
+    color: #ffd700;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══ INFO BADGE (TÊN SÚNG HIỆN GIỮA) ═══ */
+.weapon-name-badge {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    font-size: 60px;
+    font-weight: 900;
+    color: rgba(255,215,0,0.08);
+    letter-spacing: 4px;
+    pointer-events: none;
+    white-space: nowrap;
+    text-transform: uppercase;
+    transition: all 0.3s;
+}
+
+/* ═══ RESPONSIVE CHO MÀN HÌNH LỚN ═══ */
+@media (min-width: 768px) {
+    .weapon-panel {
+        top: 50%;
+        left: 20px;
+        bottom: auto;
+        right: auto;
+        transform: translateY(-50%);
+        flex-direction: column;
+        background: none;
+        padding: 0;
+        width: 200px;
+        overflow-y: auto;
+        max-height: 70vh;
+    }
+    .weapon-btn {
+        min-width: 100%;
+        padding: 12px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-align: left;
+    }
+    .weapon-btn .icon { margin-bottom: 0; }
+    .info-panel {
+        top: 50%;
+        right: 20px;
+        transform: translateY(-50%);
+        max-width: 220px;
+        padding: 16px;
+    }
+    .info-title { font-size: 16px; }
+    .info-row { font-size: 12px; padding: 5px 0; }
+    .controls {
+        top: auto;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        flex-direction: row;
+    }
+    .ctrl-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+    .weapon-name-badge { font-size: 120px; }
+    .header { padding: 16px 24px; }
+    .logo { font-size: 18px; }
+    .social-mini { font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">ĐANG TẢI MÔ HÌNH 3D...</div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="logo">⚡ FF WEAPON 3D</div>
+    <div class="social-mini">TikTok: giaho533</div>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls">
+    <div class="ctrl-btn active" id="autoRotate" title="Auto Rotate">🔄</div>
+    <div class="ctrl-btn" id="wireframe" title="Wireframe">📐</div>
+    <div class="ctrl-btn" id="reset" title="Reset View">🎯</div>
+    <div class="ctrl-btn" id="screenshot" title="Screenshot">📸</div>
+    <div class="ctrl-btn" id="fullscreen" title="Fullscreen">⛶</div>
+</div>
+
+<!-- INFO PANEL -->
+<div class="info-panel" id="infoPanel">
+    <div class="info-toggle" id="infoToggle">−</div>
+    <div class="info-title" id="weaponName">M1887</div>
+    <div class="info-body">
+        <div class="info-row"><span class="label">Loại</span><span class="value" id="wType">Shotgun</span></div>
+        <div class="info-row"><span class="label">Sát thương</span><span class="value" id="wDamage">100</span></div>
+        <div class="info-row"><span class="label">Tốc độ</span><span class="value" id="wRate">0.6/s</span></div>
+        <div class="info-row"><span class="label">Băng</span><span class="value" id="wAmmo">2</span></div>
+        <div class="info-row"><span class="label">Tầm</span><span class="value" id="wRange">Short</span></div>
+        <div class="info-row"><span class="label">Skin</span><span class="value" id="wSkin">Silver</span></div>
+    </div>
+</div>
+
+<!-- WEAPON NAME BADGE -->
+<div class="weapon-name-badge" id="weaponBadge">M1887</div>
+
+<!-- WEAPON SELECTOR -->
+<div class="weapon-panel" id="weaponPanel"></div>
+
+<!-- HINT -->
+<div class="hint" id="hint">
+    <h3>📱 HƯỚNG DẪN</h3>
+    <div class="gesture">
+        <span>👆</span>
+        <b>1 ngón: Xoay mô hình</b>
+    </div>
+    <div class="gesture">
+        <span>✌️</span>
+        <b>2 ngón: Thu/phóng</b>
+    </div>
+    <div class="gesture">
+        <span>👈👉</span>
+        <b>Chạm nút súng để đổi</b>
+    </div>
+    <button class="close-btn" id="closeHint">ĐÃ HIỂU</button>
+</div>
+
+<!-- CANVAS -->
+<div id="canvas-container"></div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ═══════════════════════════════════════════
+// SCENE SETUP
+// ═══════════════════════════════════════════
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x0a0e1a, 6, 15);
+
+const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 100);
+camera.position.set(isMobile ? 4 : 3, isMobile ? 2.5 : 2, isMobile ? 5 : 4);
+
+const renderer = new THREE.WebGLRenderer({
+    antialias: !isMobile,
+    preserveDrawingBuffer: true,
+    powerPreference: 'high-performance'
+});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.5 : 2));
+renderer.shadowMap.enabled = !isMobile;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+container.appendChild(renderer.domElement);
+
+// ═══ CONTROLS (TỐI ƯU CHO MOBILE) ═══
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 2;
+controls.minDistance = 2;
+controls.maxDistance = 12;
+controls.target.set(0, 0, 0);
+controls.enablePan = false;
+controls.enableZoom = true;
+controls.zoomSpeed = 0.8;
+controls.rotateSpeed = 1;
+controls.touches = {
+    ONE: THREE.TOUCH.ROTATE,
+    TWO: THREE.TOUCH.DOLLY_ROTATE
+};
+
+// ═══════════════════════════════════════════
+// LIGHTS
+// ═══════════════════════════════════════════
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+const keyLight = new THREE.DirectionalLight(0xffd700, 2.2);
+keyLight.position.set(5, 8, 5);
+if (!isMobile) {
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(1024, 1024);
+    keyLight.shadow.camera.left = -5;
+    keyLight.shadow.camera.right = 5;
+    keyLight.shadow.camera.top = 5;
+    keyLight.shadow.camera.bottom = -5;
+}
+scene.add(keyLight);
+
+const rimLight = new THREE.DirectionalLight(0xff6b00, 1.5);
+rimLight.position.set(-5, 3, -5);
+scene.add(rimLight);
+
+const fillLight = new THREE.PointLight(0x4a90ff, 0.8);
+fillLight.position.set(0, 2, 5);
+scene.add(fillLight);
+
+// ═══ GROUND ═══
+const groundGeo = new THREE.CircleGeometry(10, isMobile ? 32 : 64);
+const groundMat = new THREE.MeshStandardMaterial({
+    color: 0x1a1f35,
+    metalness: 0.9,
+    roughness: 0.3,
+    transparent: true,
+    opacity: 0.5
+});
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -1.5;
+ground.receiveShadow = !isMobile;
+scene.add(ground);
+
+// ═══ GRID ═══
+const grid = new THREE.GridHelper(20, isMobile ? 20 : 40, 0xffd700, 0x333355);
+grid.position.y = -1.49;
+grid.material.opacity = 0.12;
+grid.material.transparent = true;
+scene.add(grid);
+
+// ═══════════════════════════════════════════
+// MATERIALS
+// ═══════════════════════════════════════════
+const materials = {
+    metalDark: new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.95, roughness: 0.25 }),
+    metalSilver: new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 1.0, roughness: 0.15 }),
+    metalGold: new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 1.0, roughness: 0.2 }),
+    wood: new THREE.MeshStandardMaterial({ color: 0x6b3410, metalness: 0.1, roughness: 0.8 }),
+    woodDark: new THREE.MeshStandardMaterial({ color: 0x3d1f0a, metalness: 0.1, roughness: 0.85 }),
+    polymer: new THREE.MeshStandardMaterial({ color: 0x2a2a2a, metalness: 0.3, roughness: 0.7 }),
+    accent: new THREE.MeshStandardMaterial({ color: 0xff6b00, metalness: 0.8, roughness: 0.3, emissive: 0xff3300, emissiveIntensity: 0.4 })
+};
+
+let wireframeMode = false;
+const allMaterials = Object.values(materials);
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function box(w, h, d, mat, x = 0, y = 0, z = 0) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    m.castShadow = !isMobile;
+    m.receiveShadow = !isMobile;
+    return m;
+}
+function cyl(rt, rb, h, mat, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, isMobile ? 10 : 16), mat);
+    m.position.set(x, y, z);
+    m.rotation.set(rx, ry, rz);
+    m.castShadow = !isMobile;
+    m.receiveShadow = !isMobile;
+    return m;
+}
+
+// ═══════════════════════════════════════════
+// WEAPON MODELS
+// ═══════════════════════════════════════════
+
+// ───── M1887 ─────
+function createM1887() {
+    const g = new THREE.Group();
+    g.add(cyl(0.04, 0.04, 1.6, materials.metalDark, 0, 0.35, 0.2, Math.PI/2));
+    g.add(cyl(0.045, 0.045, 0.06, materials.metalGold, 0, 0.35, 0.6, Math.PI/2));
+    g.add(cyl(0.03, 0.03, 1.2, materials.metalDark, 0, 0.28, 0.1, Math.PI/2));
+    g.add(box(0.12, 0.18, 0.5, materials.metalDark, 0, 0.3, -0.4));
+    g.add(box(0.13, 0.05, 0.3, materials.metalGold, 0, 0.42, -0.4));
+    const lever = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.015, 8, 20, Math.PI), materials.metalGold);
+    lever.rotation.z = Math.PI;
+    lever.position.set(0, 0.15, -0.35);
+    g.add(lever);
+    g.add(box(0.1, 0.16, 0.7, materials.wood, 0, 0.3, -0.95));
+    g.add(box(0.12, 0.08, 0.5, materials.wood, 0, 0.42, -1.0));
+    g.add(box(0.14, 0.2, 0.05, materials.woodDark, 0, 0.3, -1.32));
+    g.add(box(0.09, 0.09, 0.5, materials.wood, 0, 0.28, 0.05));
+    g.add(box(0.05, 0.02, 0.12, materials.metalDark, 0, 0.14, -0.35));
+    g.add(box(0.015, 0.06, 0.02, materials.metalGold, 0, 0.12, -0.32));
+    g.add(box(0.04, 0.1, 0.03, materials.metalDark, 0, 0.45, -0.58));
+    g.add(box(0.02, 0.05, 0.02, materials.metalGold, 0, 0.42, 0.95));
+    g.position.y = 0.2;
+    g.scale.set(1.1, 1.1, 1.1);
+    return g;
+}
+
+// ───── M1014 ─────
+function createM1014() {
+    const g = new THREE.Group();
+    g.add(cyl(0.035, 0.035, 1.4, materials.metalDark, 0, 0.32, 0.3, Math.PI/2));
+    g.add(cyl(0.045, 0.045, 0.8, materials.polymer, 0, 0.32, 0.3, Math.PI/2));
+    g.add(cyl(0.028, 0.028, 1.1, materials.metalDark, 0, 0.24, 0.2, Math.PI/2));
+    g.add(box(0.1, 0.16, 0.6, materials.metalDark, 0, 0.28, -0.35));
+    g.add(box(0.06, 0.03, 0.7, materials.metalDark, 0, 0.4, -0.2));
+    for (let i = 0; i < 6; i++) {
+        g.add(box(0.065, 0.035, 0.02, materials.metalDark, 0, 0.4, 0.05 - i * 0.1));
+    }
+    g.add(box(0.08, 0.14, 0.5, materials.polymer, 0, 0.28, -0.9));
+    g.add(box(0.1, 0.16, 0.05, materials.polymer, 0, 0.28, -1.18));
+    const grip = box(0.06, 0.18, 0.08, materials.polymer, 0, 0.12, -0.5);
+    grip.rotation.x = -0.2;
+    g.add(grip);
+    g.add(box(0.05, 0.02, 0.12, materials.metalDark, 0, 0.14, -0.4));
+    g.add(box(0.015, 0.06, 0.02, materials.metalGold, 0, 0.12, -0.4));
+    g.add(box(0.08, 0.08, 0.55, materials.polymer, 0, 0.28, 0.15));
+    g.add(box(0.02, 0.06, 0.15, materials.accent, 0.052, 0.28, -0.3));
+    g.add(box(0.02, 0.06, 0.02, materials.metalDark, 0, 0.42, 0.9));
+    g.add(box(0.05, 0.04, 0.02, materials.metalDark, 0, 0.44, -0.5));
+    g.position.y = 0.2;
+    g.scale.set(1.05, 1.05, 1.05);
+    return g;
+}
+
+// ───── MP40 ─────
+function createMP40() {
+    const g = new THREE.Group();
+    g.add(cyl(0.025, 0.025, 0.7, materials.metalDark, 0, 0.3, 0.6, Math.PI/2));
+    g.add(cyl(0.035, 0.035, 0.35, materials.metalDark, 0, 0.3, 0.5, Math.PI/2));
+    g.add(box(0.08, 0.14, 0.7, materials.metalDark, 0, 0.28, 0));
+    g.add(box(0.09, 0.06, 0.6, materials.metalDark, 0, 0.38, 0));
+    g.add(cyl(0.045, 0.045, 0.06, materials.metalDark, 0, 0.3, -0.35, Math.PI/2));
+    g.add(box(0.07, 0.12, 0.4, materials.woodDark, 0, 0.14, 0.05));
+    const grip = box(0.06, 0.2, 0.08, materials.woodDark, 0, 0.02, -0.15);
+    grip.rotation.x = 0.15;
+    g.add(grip);
+    g.add(box(0.035, 0.4, 0.08, materials.metalDark, 0, 0.05, 0.1));
+    g.add(box(0.05, 0.02, 0.1, materials.metalDark, 0, 0.1, -0.05));
+    g.add(box(0.015, 0.05, 0.02, materials.metalGold, 0, 0.08, -0.05));
+    g.add(box(0.04, 0.04, 0.5, materials.metalDark, 0, 0.14, -0.65));
+    g.add(box(0.06, 0.08, 0.03, materials.metalDark, 0, 0.14, -0.9));
+    g.add(box(0.02, 0.05, 0.02, materials.metalDark, 0, 0.4, 0.8));
+    g.add(box(0.03, 0.04, 0.02, materials.metalDark, 0, 0.42, -0.25));
+    g.add(box(0.04, 0.04, 0.06, materials.accent, 0.06, 0.35, -0.1));
+    g.position.y = 0.3;
+    g.scale.set(1.15, 1.15, 1.15);
+    return g;
+}
+
+// ───── UMP ─────
+function createUMP() {
+    const g = new THREE.Group();
+    g.add(cyl(0.022, 0.022, 0.5, materials.metalDark, 0, 0.32, 0.5, Math.PI/2));
+    g.add(cyl(0.03, 0.03, 0.08, materials.metalDark, 0, 0.32, 0.72, Math.PI/2));
+    g.add(box(0.08, 0.12, 0.9, materials.polymer, 0, 0.3, 0));
+    g.add(box(0.05, 0.02, 0.9, materials.metalDark, 0, 0.38, 0));
+    for (let i = 0; i < 8; i++) {
+        g.add(box(0.055, 0.025, 0.02, materials.metalDark, 0, 0.38, 0.35 - i * 0.1));
+    }
+    g.add(box(0.075, 0.08, 0.55, materials.polymer, 0, 0.18, 0));
+    const grip = box(0.06, 0.2, 0.09, materials.polymer, 0, 0.02, -0.15);
+    grip.rotation.x = 0.15;
+    g.add(grip);
+    g.add(box(0.035, 0.32, 0.08, materials.polymer, 0, -0.05, 0.1));
+    g.add(box(0.04, 0.04, 0.09, materials.accent, 0, -0.2, 0.1));
+    g.add(box(0.05, 0.02, 0.12, materials.metalDark, 0, 0.1, -0.02));
+    g.add(box(0.015, 0.05, 0.02, materials.metalGold, 0, 0.08, -0.02));
+    g.add(box(0.05, 0.06, 0.4, materials.metalDark, 0, 0.3, -0.65));
+    g.add(box(0.08, 0.12, 0.05, materials.polymer, 0, 0.28, -0.88));
+    g.add(box(0.05, 0.12, 0.06, materials.polymer, 0, 0.15, 0.35));
+    g.add(box(0.05, 0.08, 0.1, materials.metalDark, 0, 0.45, -0.05));
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.015, 12, 12), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+    dot.position.set(0, 0.45, 0.01);
+    g.add(dot);
+    g.position.y = 0.3;
+    g.scale.set(1.1, 1.1, 1.1);
+    return g;
+}
+
+// ───── LỤC BẠC ─────
+function createSilverPistol() {
+    const g = new THREE.Group();
+    g.add(cyl(0.028, 0.028, 0.35, materials.metalSilver, 0, 0.28, 0.4, Math.PI/2));
+    g.add(box(0.03, 0.015, 0.35, materials.metalSilver, 0, 0.31, 0.4));
+    g.add(box(0.015, 0.03, 0.02, materials.metalSilver, 0, 0.34, 0.55));
+    g.add(cyl(0.055, 0.055, 0.12, materials.metalSilver, 0, 0.28, 0.1, Math.PI/2));
+    for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        g.add(cyl(0.008, 0.008, 0.13, materials.metalDark,
+            0, 0.28 + Math.cos(angle) * 0.035, 0.1 + Math.sin(angle) * 0.035, Math.PI/2));
+    }
+    g.add(box(0.05, 0.1, 0.2, materials.metalSilver, 0, 0.28, -0.1));
+    g.add(box(0.05, 0.02, 0.2, materials.metalSilver, 0, 0.34, -0.1));
+    g.add(box(0.04, 0.025, 0.02, materials.metalSilver, 0, 0.36, -0.18));
+    g.add(box(0.02, 0.06, 0.03, materials.metalSilver, 0, 0.36, -0.22));
+    const guard = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.008, 8, 20, Math.PI), materials.metalSilver);
+    guard.rotation.z = Math.PI;
+    guard.position.set(0, 0.18, 0.02);
+    g.add(guard);
+    g.add(box(0.012, 0.05, 0.02, materials.metalGold, 0, 0.19, 0.02));
+    const grip = box(0.06, 0.22, 0.1, materials.metalSilver, 0, 0.08, -0.15);
+    grip.rotation.x = 0.15;
+    g.add(grip);
+    const jewel = new THREE.Mesh(
+        new THREE.SphereGeometry(0.02, 12, 12),
+        new THREE.MeshStandardMaterial({ color: 0xff6b00, metalness: 0.9, roughness: 0.1, emissive: 0xff3300, emissiveIntensity: 0.6 })
+    );
+    jewel.position.set(0, 0.05, -0.13);
+    g.add(jewel);
+    g.position.y = 0.3;
+    g.scale.set(1.3, 1.3, 1.3);
+    return g;
+}
+
+// ═══════════════════════════════════════════
+// WEAPON DATABASE
+// ═══════════════════════════════════════════
+const weapons = {
+    m1887: {
+        name: 'M1887', icon: '🔫', type: 'Shotgun', damage: '100',
+        rate: '0.6/s', ammo: '2', range: 'Short', skin: 'Silver',
+        builder: createM1887, scale: 1.1
+    },
+    m1014: {
+        name: 'M1014', icon: '🎯', type: 'Shotgun', damage: '94',
+        rate: '1.2/s', ammo: '6', range: 'Short-Mid', skin: 'Tactical',
+        builder: createM1014, scale: 1.05
+    },
+    mp40: {
+        name: 'MP40', icon: '💥', type: 'SMG', damage: '48',
+        rate: '9.6/s', ammo: '20', range: 'Short', skin: 'Classic',
+        builder: createMP40, scale: 1.15
+    },
+    ump: {
+        name: 'UMP', icon: '⚡', type: 'SMG', damage: '52',
+        rate: '8.5/s', ammo: '30', range: 'Mid', skin: 'Elite',
+        builder: createUMP, scale: 1.1
+    },
+    pistol: {
+        name: 'LỤC BẠC', icon: '✨', type: 'Pistol', damage: '78',
+        rate: '1.5/s', ammo: '6', range: 'Short', skin: 'Silver',
+        builder: createSilverPistol, scale: 1.3
+    }
+};
+
+// ═══════════════════════════════════════════
+// BUILD UI
+// ═══════════════════════════════════════════
+const panel = document.getElementById('weaponPanel');
+Object.keys(weapons).forEach(key => {
+    const w = weapons[key];
+    const btn = document.createElement('button');
+    btn.className = 'weapon-btn';
+    btn.innerHTML = `<span class="icon">${w.icon}</span>${w.name}`;
+    btn.dataset.key = key;
+    btn.onclick = () => selectWeapon(key);
+    panel.appendChild(btn);
+});
+
+// ═══════════════════════════════════════════
+// SELECT WEAPON
+// ═══════════════════════════════════════════
+let currentWeapon = null;
+let currentWeaponKey = null;
+
+function selectWeapon(key) {
+    if (currentWeaponKey === key) return;
+
+    // Fade out old
+    if (currentWeapon) {
+        const old = currentWeapon;
+        let t = 1;
+        const fadeOut = setInterval(() => {
+            t -= 0.15;
+            if (t <= 0) {
+                clearInterval(fadeOut);
+                scene.remove(old);
+            } else {
+                const s = old.userData.targetScale * t;
+                old.scale.set(s, s, s);
+            }
+        }, 16);
+    }
+
+    // Build new
+    const w = weapons[key];
+    currentWeapon = w.builder();
+    currentWeapon.userData.targetScale = w.scale;
+    scene.add(currentWeapon);
+    currentWeaponKey = key;
+
+    // Scale in
+    currentWeapon.scale.set(0.01, 0.01, 0.01);
+    let t = 0;
+    const fadeIn = setInterval(() => {
+        t += 0.08;
+        if (t >= 1) {
+            t = 1;
+            clearInterval(fadeIn);
+        }
+        const eased = 1 - Math.pow(1 - t, 3);
+        const s = w.scale * eased;
+        if (currentWeapon) currentWeapon.scale.set(s, s, s);
+    }, 16);
+
+    // Update UI
+    document.getElementById('weaponName').textContent = w.name;
+    document.getElementById('weaponBadge').textContent = w.name;
+    document.getElementById('wType').textContent = w.type;
+    document.getElementById('wDamage').textContent = w.damage;
+    document.getElementById('wRate').textContent = w.rate;
+    document.getElementById('wAmmo').textContent = w.ammo;
+    document.getElementById('wRange').textContent = w.range;
+    document.getElementById('wSkin').textContent = w.skin;
+
+    document.querySelectorAll('.weapon-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.key === key);
+    });
+
+    // Vibrate on mobile
+    if (isMobile && navigator.vibrate) navigator.vibrate(15);
+}
+
+// ═══════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════
+document.getElementById('autoRotate').onclick = (e) => {
+    controls.autoRotate = !controls.autoRotate;
+    e.currentTarget.classList.toggle('active', controls.autoRotate);
+    if (isMobile && navigator.vibrate) navigator.vibrate(10);
+};
+
+document.getElementById('wireframe').onclick = (e) => {
+    wireframeMode = !wireframeMode;
+    allMaterials.forEach(m => m.wireframe = wireframeMode);
+    e.currentTarget.classList.toggle('active', wireframeMode);
+    if (isMobile && navigator.vibrate) navigator.vibrate(10);
+};
+
+document.getElementById('reset').onclick = () => {
+    camera.position.set(isMobile ? 4 : 3, isMobile ? 2.5 : 2, isMobile ? 5 : 4);
+    controls.target.set(0, 0, 0);
+    if (isMobile && navigator.vibrate) navigator.vibrate(10);
+};
+
+document.getElementById('screenshot').onclick = () => {
+    renderer.render(scene, camera);
+    const url = renderer.domElement.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ff-${currentWeaponKey}-${Date.now()}.png`;
+    a.click();
+    if (isMobile && navigator.vibrate) navigator.vibrate(20);
+};
+
+document.getElementById('fullscreen').onclick = () => {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+        document.exitFullscreen();
+    }
+};
+
+// ═══ INFO PANEL TOGGLE ═══
+const infoPanel = document.getElementById('infoPanel');
+const infoToggle = document.getElementById('infoToggle');
+infoToggle.onclick = () => {
+    infoPanel.classList.toggle('collapsed');
+    infoToggle.textContent = infoPanel.classList.contains('collapsed') ? '+' : '−';
+};
+
+// ═══ HINT ═══
+document.getElementById('closeHint').onclick = () => {
+    document.getElementById('hint').classList.add('hidden');
+};
+
+// Auto hide hint after 5s
+setTimeout(() => {
+    document.getElementById('hint').classList.add('hidden');
+}, 8000);
+
+// ═══════════════════════════════════════════
+// RESIZE
+// ═══════════════════════════════════════════
+addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+});
+
+// ═══ ORIENTATION CHANGE ═══
+addEventListener('orientationchange', () => {
+    setTimeout(() => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+    }, 200);
+});
+
+// ═══════════════════════════════════════════
+// ANIMATION LOOP
+// ═══════════════════════════════════════════
+let lastTime = 0;
+function animate(time) {
+    requestAnimationFrame(animate);
+    const delta = (time - lastTime) * 0.001;
+    lastTime = time;
+
+    controls.update();
+
+    // Subtle hover
+    if (currentWeapon) {
+        currentWeapon.position.y = Math.sin(time * 0.001) * 0.05 + (currentWeaponKey === 'pistol' ? 0.3 : currentWeaponKey === 'mp40' || currentWeaponKey === 'ump' ? 0.3 : 0.2);
+        currentWeapon.rotation.z = Math.sin(time * 0.0008) * 0.03;
+    }
+
+    renderer.render(scene, camera);
+}
+
+// ═══════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════
+selectWeapon('m1887');
+animate(0);
+
+setTimeout(() => {
+    document.getElementById('loading').classList.add('hidden');
+}, 800);
+</script>
+
+</body>
+</html>
